@@ -510,52 +510,60 @@ function hideLoading() {
 }
 
 // ── SERIALIZE / DESERIALIZE ──
-// SheetDB armazena tudo como string, então precisamos converter
+// Lê qualquer variação de nome de coluna (maiúscula, minúscula, com/sem acento)
+function col(row, ...names) {
+  for (const n of names) {
+    if (row[n] !== undefined) return row[n];
+  }
+  return '';
+}
+
 function rowToImovel(row) {
   return {
-    id: row.id,  // mantém como string (usada como chave no SheetDB)
-    tipo: row.tipo || '',
-    finalidade: row.finalidade || '',
-    status: row.status || 'Disponível',
-    bairro: row.bairro || '',
-    endereco: row.endereco || '',
-    proprietario: row.proprietario || '',
-    telefone: row.telefone || '',
-    valor: parseFloat(row.valor) || 0,
-    area: parseFloat(row.area) || 0,
-    quartos: parseInt(row.quartos) || 0,
-    banheiros: parseInt(row.banheiros) || 0,
-    vagas: parseInt(row.vagas) || 0,
-    descricao: row.descricao || '',
-    data: row.data || '',
-    exclusividade: row.exclusividade === 'true' || row.exclusividade === true,
-    documentacao: row.documentacao === 'true' || row.documentacao === true,
-    fotos: (() => { try { return JSON.parse(row.fotos || '[]'); } catch(e) { return []; } })(),
-    visitas: (() => { try { return JSON.parse(row.visitas || '[]'); } catch(e) { return []; } })(),
+    id: col(row, 'ID', 'id', 'Id'),
+    tipo: col(row, 'Tipo', 'tipo', 'TIPO') || '',
+    finalidade: col(row, 'Finalidade', 'finalidade', 'FINALIDADE') || '',
+    status: col(row, 'Status', 'status', 'STATUS') || 'Disponível',
+    bairro: col(row, 'Bairro', 'bairro', 'BAIRRO') || '',
+    endereco: col(row, 'Endereço', 'Endereco', 'endereco', 'endereço') || '',
+    proprietario: col(row, 'Proprietário', 'Proprietario', 'proprietario', 'proprietário') || '',
+    telefone: col(row, 'Telefone', 'telefone', 'TELEFONE') || '',
+    valor: parseFloat(col(row, 'Valor', 'valor', 'VALOR')) || 0,
+    area: parseFloat(col(row, 'Área', 'Area', 'area', 'área')) || 0,
+    quartos: parseInt(col(row, 'Quartos', 'quartos', 'QUARTOS')) || 0,
+    banheiros: parseInt(col(row, 'Banheiros ', 'Banheiros', 'banheiros', 'BANHEIROS')) || 0,
+    vagas: parseInt(col(row, 'Vagas', 'vagas', 'VAGAS')) || 0,
+    descricao: col(row, 'Descrição', 'Descricao', 'descricao', 'descrição') || '',
+    data: col(row, 'Data', 'data', 'DATA') || '',
+    exclusividade: col(row, 'Exclusividade ', 'Exclusividade', 'exclusividade') === 'true',
+    documentacao: col(row, 'Documentação', 'Documentacao', 'documentacao') === 'true',
+    fotos: (() => { try { return JSON.parse(col(row, 'fotos ', 'fotos', 'Fotos') || '[]'); } catch(e) { return []; } })(),
+    visitas: (() => { try { return JSON.parse(col(row, 'visitas', 'Visitas') || '[]'); } catch(e) { return []; } })(),
   };
 }
 
+// Usa os nomes EXATOS da planilha ao escrever
 function imovelToRow(obj) {
   return {
-    id: String(obj.id),
-    tipo: obj.tipo || '',
-    finalidade: obj.finalidade || '',
-    status: obj.status || '',
-    bairro: obj.bairro || '',
-    endereco: obj.endereco || '',
-    proprietario: obj.proprietario || '',
-    telefone: obj.telefone || '',
-    valor: String(obj.valor || 0),
-    area: String(obj.area || 0),
-    quartos: String(obj.quartos || 0),
-    banheiros: String(obj.banheiros || 0),
-    vagas: String(obj.vagas || 0),
-    descricao: obj.descricao || '',
-    data: obj.data || '',
-    exclusividade: String(!!obj.exclusividade),
-    documentacao: String(!!obj.documentacao),
-    fotos: JSON.stringify(obj.fotos || []),
-    visitas: JSON.stringify(obj.visitas || []),
+    'ID': String(obj.id),
+    'Tipo': obj.tipo || '',
+    'Finalidade': obj.finalidade || '',
+    'Status': obj.status || '',
+    'Bairro': obj.bairro || '',
+    'Endereço ': obj.endereco || '',
+    'Proprietário ': obj.proprietario || '',
+    'Telefone': obj.telefone || '',
+    'Valor': String(obj.valor || 0),
+    'Área ': String(obj.area || 0),
+    'Quartos': String(obj.quartos || 0),
+    'Banheiros ': String(obj.banheiros || 0),
+    'Vagas': String(obj.vagas || 0),
+    'Descrição ': obj.descricao || '',
+    'Data': obj.data || '',
+    'Exclusividade ': String(!!obj.exclusividade),
+    'Documentação ': String(!!obj.documentacao),
+    'fotos ': JSON.stringify(obj.fotos || []),
+    'visitas': JSON.stringify(obj.visitas || []),
   };
 }
 
@@ -600,7 +608,7 @@ async function apiCriar(obj) {
 
 // ── API: ATUALIZAR ──
 async function apiAtualizar(obj) {
-  const res = await fetch(`${SHEETDB_URL}/id/${encodeURIComponent(String(obj.id))}`, {
+  const res = await fetch(`${SHEETDB_URL}/ID/${encodeURIComponent(String(obj.id))}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ data: imovelToRow(obj) })
@@ -611,7 +619,7 @@ async function apiAtualizar(obj) {
 
 // ── API: DELETAR ──
 async function apiDeletar(id) {
-  const res = await fetch(`${SHEETDB_URL}/id/${encodeURIComponent(String(id))}`, {
+  const res = await fetch(`${SHEETDB_URL}/ID/${encodeURIComponent(String(id))}`, {
     method: 'DELETE'
   });
   if (!res.ok) throw new Error('Erro ao deletar: ' + res.status);
